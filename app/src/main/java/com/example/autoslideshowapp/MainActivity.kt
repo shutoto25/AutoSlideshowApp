@@ -78,7 +78,9 @@ class MainActivity : AppCompatActivity()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // リスナーセット.
         setListener()
+        // ボタンテキストを初期化.
         btSlideShow.text = start
     }
 
@@ -98,13 +100,15 @@ class MainActivity : AppCompatActivity()
         Log.d(TAG, "$CLASS_NAME.onPause")
         super.onPause()
 
+        // ボタンテキストとフラグを初期化.
+        btSlideShow.text = start
+        FLAG_SLIDE_SHOW = false
+
         if (mTimer != null) {
             // 現在スケジュールされているタスクを破棄してタイマーを終了する
             mTimer!!.cancel()
             mTimer = null
         }
-        // 表示を初期化.
-        btSlideShow.text = start
     }
 
 
@@ -168,7 +172,7 @@ class MainActivity : AppCompatActivity()
         when (v.id) {
             R.id.btBack -> {
                 if (FLAG_SLIDE_SHOW) {
-                    // スライドショー中はボタンをボタン操作禁止.
+                    // スライドショー中はボタン操作抑止.
                     Toast.makeText(this, TOAST_MESSAGE, Toast.LENGTH_SHORT).show()
                     return
                 }
@@ -178,16 +182,16 @@ class MainActivity : AppCompatActivity()
                     // indexからIDを取得し、そのIDから画像のURIを取得する
                     val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
                     val id = mCursor.getLong(fieldIndex)
-                    val imageUri =
-                        ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+                    val imageUri = ContentUris.withAppendedId(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                     // 取得したURLから画像を表示する
                     ivImage.setImageURI(imageUri)
                 } else if (mCursor.moveToLast()) {
                     // indexからIDを取得し、そのIDから画像のURIを取得する
                     val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
                     val id = mCursor.getLong(fieldIndex)
-                    val imageUri =
-                        ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+                    val imageUri = ContentUris.withAppendedId(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                     // 取得したURLから画像を表示する
                     ivImage.setImageURI(imageUri)
                 }
@@ -195,7 +199,7 @@ class MainActivity : AppCompatActivity()
 
             R.id.btNext -> {
                 if (FLAG_SLIDE_SHOW) {
-                    // スライドショー中はボタンをボタン操作禁止.
+                    // スライドショー中はボタン操作抑止.
                     Toast.makeText(this, TOAST_MESSAGE, Toast.LENGTH_SHORT).show()
                     return
                 }
@@ -205,16 +209,16 @@ class MainActivity : AppCompatActivity()
                     // indexからIDを取得し、そのIDから画像のURIを取得する
                     val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
                     val id = mCursor.getLong(fieldIndex)
-                    val imageUri =
-                        ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+                    val imageUri = ContentUris.withAppendedId(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                     // 取得したURLから画像を表示する
                     ivImage.setImageURI(imageUri)
                 } else if (mCursor.moveToFirst()) {
                     // indexからIDを取得し、そのIDから画像のURIを取得する
                     val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
                     val id = mCursor.getLong(fieldIndex)
-                    val imageUri =
-                        ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+                    val imageUri = ContentUris.withAppendedId(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                     // 取得したURLから画像を表示する
                     ivImage.setImageURI(imageUri)
                 }
@@ -226,7 +230,7 @@ class MainActivity : AppCompatActivity()
                     btSlideShow.text = stop
                     FLAG_SLIDE_SHOW = true
                 } else {
-                    // スタートボンタンとフラグをセット.
+                    // スタートボタンとフラグをセット.
                     btSlideShow.text = start
                     FLAG_SLIDE_SHOW = false
 
@@ -245,22 +249,16 @@ class MainActivity : AppCompatActivity()
                                 // indexからIDを取得し、そのIDから画像のURIを取得する
                                 val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
                                 val id = mCursor.getLong(fieldIndex)
-                                val imageUri =
-                                    ContentUris.withAppendedId(
-                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                        id
-                                    )
+                                val imageUri = ContentUris.withAppendedId(
+                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                                 // 取得したURLから画像を表示する
                                 ivImage.setImageURI(imageUri)
                             } else if (mCursor.moveToFirst()) {
                                 // indexからIDを取得し、そのIDから画像のURIを取得する
                                 val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
                                 val id = mCursor.getLong(fieldIndex)
-                                val imageUri =
-                                    ContentUris.withAppendedId(
-                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                        id
-                                    )
+                                val imageUri = ContentUris.withAppendedId(
+                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
                                 // 取得したURLから画像を表示する
                                 ivImage.setImageURI(imageUri)
                             }
@@ -274,7 +272,7 @@ class MainActivity : AppCompatActivity()
 
 
     /**
-     * ストレージの一番最初の画像を取得.
+     * ストレージの画像を取得.
      */
     private fun getGallery() {
         Log.d(TAG, "$CLASS_NAME.getGallery")
@@ -331,14 +329,4 @@ class MainActivity : AppCompatActivity()
 /* ユーザがパーミッションの利用を「拒否」した場合にも、アプリの強制終了やエラーが発生しないようにして下さい。
 /* 要件を満たすものであれば、どのようなものでも構いません。
 /* 見栄え良く、楽しめるスライドショーアプリを目指しましょう！
-/*
-/* ヒント
-/* スライドショーアプリは、Lesson5で学んだ内容を組み合わせて作成します。
-/* 全ての要件を一度に作ろうとすると、とても難しく感じることもあるでしょう。
-/* そのような時は、機能を分けて考え、少しずつ作るようにしてみましょう。
-/* このように、機能を分けて段階的に開発することは、実際の開発現場でもよく行われています。
-/* 今回の場合、以下のように分けて考えてみると良いでしょう。
-/*
-/* 機能1：進むボタンと戻るボタンを押した時に画像を表示する機能
-/* 機能2：再生/停止ボタンを押した時に、画像を自動送りする機能
  */
