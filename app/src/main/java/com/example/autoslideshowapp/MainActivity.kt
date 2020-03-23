@@ -1,10 +1,8 @@
 package com.example.autoslideshowapp
 
 import android.Manifest
-import android.content.ContentResolver
-import android.content.ContentUris
 import android.content.pm.PackageManager
-import android.database.Cursor
+import android.net.Uri
 import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -34,7 +32,7 @@ class MainActivity : AppCompatActivity()
     /**
      *リクエストパーミッション.
      */
-    private val permission = Manifest.permission.READ_EXTERNAL_STORAGE
+    private val PERMISSIONS = Manifest.permission.READ_EXTERNAL_STORAGE
     /**
      * パーミッション許諾フラグ.
      */
@@ -43,10 +41,6 @@ class MainActivity : AppCompatActivity()
      * スライドショー中フラグ.
      */
     private var FLAG_SLIDE_SHOW = false
-    /**
-     * スライドショー中トーストメッセージ.
-     */
-    private val TOAST_MESSAGE = "スライドショー中は操作できません。"
     /**
      * タイマー.
      */
@@ -64,13 +58,9 @@ class MainActivity : AppCompatActivity()
      */
     private val stop = "SlideShow：Ⅱ"
     /**
-     * 遅延初期化_ContentResolver.
+     * Gallery
      */
-    private lateinit var mResolver: ContentResolver
-    /**
-     * 遅延初期化_カーソル.
-     */
-    private lateinit var mCursor: Cursor
+    private var mGallery: Gallery? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,7 +79,7 @@ class MainActivity : AppCompatActivity()
         Log.d(TAG, "$CLASS_NAME.onStart")
         super.onStart()
 
-        if(!FLAG_PERMISSION_GRANTED) {
+        if (!FLAG_PERMISSION_GRANTED) {
             // パーミッションチェック.
             checkPermissions()
         }
@@ -116,26 +106,28 @@ class MainActivity : AppCompatActivity()
         Log.d(TAG, "$CLASS_NAME.onDestroy")
         super.onDestroy()
 
-        // カーソルを閉じる.
-        mCursor.close()
+        if (mGallery != null) {
+            // カーソルを閉じる.
+            mGallery!!.close()
+        }
     }
 
 
     /**
-     * パーミッション許諾確認
+     * パーミッション許諾確認.
      */
     private fun checkPermissions() {
         Log.d(TAG, "$CLASS_NAME.checkPermissions")
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED) {
+            if (checkSelfPermission(PERMISSIONS) == PackageManager.PERMISSION_GRANTED) {
                 Log.d(TAG, "パーミッション許諾済み")
 
                 FLAG_PERMISSION_GRANTED = true
                 // パーミッション要求を満たしているので画像取得.
                 getGallery()
             } else {
-                requestPermissions(arrayOf(permission), PERMISSION_REQUEST_CODE)
+                requestPermissions(arrayOf(PERMISSIONS), PERMISSION_REQUEST_CODE)
             }
         }
     }
@@ -146,7 +138,8 @@ class MainActivity : AppCompatActivity()
         Log.d(TAG, "$CLASS_NAME.onRequestPermissionsResult")
 
         // ユーザの選択結果を判定.
-        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (grantResults.isNotEmpty()
+            && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "パーミッション許諾")
 
             FLAG_PERMISSION_GRANTED = true
@@ -173,55 +166,33 @@ class MainActivity : AppCompatActivity()
             R.id.btBack -> {
                 if (FLAG_SLIDE_SHOW) {
                     // スライドショー中はボタン操作抑止.
-                    Toast.makeText(this, TOAST_MESSAGE, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this,
+                        R.string.toast_message_slide_show, Toast.LENGTH_SHORT).show()
                     return
                 }
                 // 前の画像を表示
                 // 一番最初の画像で「←」をした場合、一番最後の画像を取得して表示
-                if (mCursor.moveToPrevious()) {
-                    // indexからIDを取得し、そのIDから画像のURIを取得する
-                    val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
-                    val id = mCursor.getLong(fieldIndex)
-                    val imageUri = ContentUris.withAppendedId(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                    // 取得したURLから画像を表示する
-                    ivImage.setImageURI(imageUri)
-                } else if (mCursor.moveToLast()) {
-                    // indexからIDを取得し、そのIDから画像のURIを取得する
-                    val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
-                    val id = mCursor.getLong(fieldIndex)
-                    val imageUri = ContentUris.withAppendedId(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                    // 取得したURLから画像を表示する
-                    ivImage.setImageURI(imageUri)
+                var imageUri: Uri? = mGallery!!.getPrevious()
+                if (imageUri == null) {
+                    imageUri = mGallery!!.getLast()
                 }
+                ivImage.setImageURI(imageUri)
             }
 
             R.id.btNext -> {
                 if (FLAG_SLIDE_SHOW) {
                     // スライドショー中はボタン操作抑止.
-                    Toast.makeText(this, TOAST_MESSAGE, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this,
+                        R.string.toast_message_slide_show, Toast.LENGTH_SHORT).show()
                     return
                 }
                 // 次の画像を表示.
                 // 一番最後の画像で「→」をタップした場合、一番最初の画像を取得して表示
-                if (mCursor.moveToNext()) {
-                    // indexからIDを取得し、そのIDから画像のURIを取得する
-                    val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
-                    val id = mCursor.getLong(fieldIndex)
-                    val imageUri = ContentUris.withAppendedId(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                    // 取得したURLから画像を表示する
-                    ivImage.setImageURI(imageUri)
-                } else if (mCursor.moveToFirst()) {
-                    // indexからIDを取得し、そのIDから画像のURIを取得する
-                    val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
-                    val id = mCursor.getLong(fieldIndex)
-                    val imageUri = ContentUris.withAppendedId(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                    // 取得したURLから画像を表示する
-                    ivImage.setImageURI(imageUri)
+                var imageUri: Uri? = mGallery!!.getNext()
+                if (imageUri == null) {
+                    imageUri = mGallery!!.getFirst()
                 }
+                ivImage.setImageURI(imageUri)
             }
 
             R.id.btSlideShow -> {
@@ -244,28 +215,15 @@ class MainActivity : AppCompatActivity()
                     override fun run() {
                         mHandler.post {
                             // 次の画像を表示.
-                            // 一番最後の画像で「next」をタップした場合、一番最初の画像を取得して表示
-                            if (mCursor.moveToNext()) {
-                                // indexからIDを取得し、そのIDから画像のURIを取得する
-                                val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
-                                val id = mCursor.getLong(fieldIndex)
-                                val imageUri = ContentUris.withAppendedId(
-                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                                // 取得したURLから画像を表示する
-                                ivImage.setImageURI(imageUri)
-                            } else if (mCursor.moveToFirst()) {
-                                // indexからIDを取得し、そのIDから画像のURIを取得する
-                                val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
-                                val id = mCursor.getLong(fieldIndex)
-                                val imageUri = ContentUris.withAppendedId(
-                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-                                // 取得したURLから画像を表示する
-                                ivImage.setImageURI(imageUri)
+                            // 一番最後の画像で「→」をタップした場合、一番最初の画像を取得して表示
+                            var imageUri: Uri? = mGallery!!.getNext()
+                            if (imageUri == null) {
+                                imageUri = mGallery!!.getFirst()
                             }
+                            ivImage.setImageURI(imageUri)
                         }
                     }
                 }, 2000, 2000) // 2000ms経過する毎に2000msのループを設定する
-
             }
         }
     }
@@ -277,8 +235,8 @@ class MainActivity : AppCompatActivity()
     private fun getGallery() {
         Log.d(TAG, "$CLASS_NAME.getGallery")
 
-        mResolver = contentResolver
-        mCursor = mResolver.query(
+        val resolver = contentResolver
+        val cursor = resolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             null,
             null,
@@ -286,14 +244,13 @@ class MainActivity : AppCompatActivity()
             null
         )
 
-        if (mCursor.moveToFirst()) {
-            // indexからIDを取得し、そのIDから画像のURIを取得する
-            val fieldIndex = mCursor.getColumnIndex(MediaStore.Images.Media._ID)
-            val id = mCursor.getLong(fieldIndex)
-            val imageUri =
-                ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-            // 取得したURLから画像を表示する
+        if (cursor != null) {
+            mGallery = Gallery(cursor)
+            val imageUri = mGallery!!.getFirst()
             ivImage.setImageURI(imageUri)
+        } else {
+            Toast.makeText(this,
+                R.string.toast_message_no_gallery, Toast.LENGTH_SHORT).show()
         }
     }
 

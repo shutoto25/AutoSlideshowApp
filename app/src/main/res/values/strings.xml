@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">AutoSlideshowApp</string>
+    <string name="toast_message_slide_show">スライドショー中は操作できません。</string>
+    <string name="toast_message_no_gallery">ストレージに画像がありません。</string>
 </resources>
